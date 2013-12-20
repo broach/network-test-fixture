@@ -113,7 +113,7 @@ public class NetworkTestFixture implements Runnable
         server.configureBlocking(false); 
         server.register(selector, SelectionKey.OP_ACCEPT); 
         key = server.keyFor(selector);
-        key.attach(new AcceptReadPartialWriteStayOpen(server));
+        key.attach(new Shutdown(server));
         
     }
     
