@@ -25,8 +25,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -45,7 +43,9 @@ public class NetworkTestFixture implements Runnable
     public static int PB_PARTIAL_WRITE_THEN_CLOSE = 3;
     public static int PB_FULL_WRITE_STAY_OPEN = 4;
     public static int PB_PARTIAL_WRITE_STAY_OPEN = 5;
-    public static int SHUTDOWN = 6;
+    public static int PB_FULL_WRITE_ERROR_STAY_OPEN = 6;
+    public static int NO_LISTENER = 7;
+    public static int SHUTDOWN = 8;
     
     private final Selector selector;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
@@ -114,6 +114,14 @@ public class NetworkTestFixture implements Runnable
         server.register(selector, SelectionKey.OP_ACCEPT); 
         key = server.keyFor(selector);
         key.attach(new Shutdown(server));
+        
+        server = ServerSocketChannel.open();
+        server.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+        server.socket().bind(new InetSocketAddress("127.0.0.1", startingPort + PB_FULL_WRITE_ERROR_STAY_OPEN ));
+        server.configureBlocking(false); 
+        server.register(selector, SelectionKey.OP_ACCEPT); 
+        key = server.keyFor(selector);
+        key.attach(new AcceptReadWriteErrorStayOpen(server));
         
     }
     
@@ -186,7 +194,7 @@ public class NetworkTestFixture implements Runnable
                     }
                     catch (InterruptedException ex)
                     {
-                        Logger.getLogger(NetworkTestFixture.class.getName()).log(Level.SEVERE, null, ex);
+                        ex.printStackTrace();
                     }
                 }
                 else
